@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 import pymysql
@@ -5,15 +6,17 @@ import csv
 import io
 
 app = Flask(__name__)
-app.secret_key = 'kunci_rahasia_siakad_sangat_aman_uca'
+app.secret_key = os.environ.get('SECRET_KEY', 'kunci_rahasia_siakad_sangat_aman_uca')
 
 def get_db_connection():
     return pymysql.connect(
-        host='localhost',
-        user='root',
-        password='',
-        database='siakad_db',
-        cursorclass=pymysql.cursors.DictCursor
+        host=os.environ.get('DB_HOST', 'localhost'),
+        port=int(os.environ.get('DB_PORT', 3306)),
+        user=os.environ.get('DB_USER', 'root'),
+        password=os.environ.get('DB_PASSWORD', ''),
+        database=os.environ.get('DB_NAME', 'siakad_db'),
+        cursorclass=pymysql.cursors.DictCursor,
+        ssl={'ssl': {}} if os.environ.get('DB_HOST') else None
     )
 
 @app.route('/login', methods=['GET', 'POST'])

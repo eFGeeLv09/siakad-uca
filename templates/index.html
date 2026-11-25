@@ -20,7 +20,7 @@
     <aside class="no-print w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-6">
         <div class="space-y-6">
             <div class="flex items-center gap-3 pb-6 border-b border-slate-800">
-                <img src="{{ url_for('static', filename='Logo UCA.png') }}" alt="Logo UCA" class="h-10 w-auto object-contain">
+                <img src="{{ url_for('static', filename='logo-uca.png') }}" alt="Logo UCA" class="h-10 w-auto object-contain">
                 <div>
                     <h1 class="font-bold text-base text-white tracking-wide">SIAKAD UCA</h1>
                     <p class="text-[10px] text-slate-400">Universitas Cendekia Abditama</p>
@@ -75,8 +75,9 @@
 
         <div id="area-cetak" class="space-y-8">
             
+            <!-- KOP SURAT RESMI -->
             <div class="pdf-kop items-center gap-4 pb-6 border-b-2 border-slate-700">
-                <img src="{{ url_for('static', filename='Logo UCA.png') }}" alt="Logo UCA" class="h-14 w-auto object-contain">
+                <img src="{{ url_for('static', filename='logo-uca.png') }}" alt="Logo UCA" class="h-14 w-auto object-contain">
                 <div class="text-left">
                     <h2 class="text-lg font-extrabold text-white uppercase tracking-wider">UNIVERSITAS CENDEKIA ABDITAMA</h2>
                     <p class="text-xs text-slate-300">Sistem Informasi Akademik Terpadu (SIAKAD UCA)</p>
@@ -160,7 +161,7 @@
                         </div>
                         <div class="flex justify-between pb-2 border-b border-slate-800">
                             <span>Database:</span>
-                            <span class="font-semibold text-slate-200">siakad_db (XAMPP)</span>
+                            <span class="font-semibold text-slate-200">Aiven Cloud MySQL</span>
                         </div>
                     </div>
                 </div>
@@ -173,7 +174,7 @@
                 <div class="no-print bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
                     <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">+ Tambah Mahasiswa Baru</h3>
                     <form action="{{ url_for('tambah_mahasiswa') }}" method="POST" onsubmit="return validasiFormMhs(this)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                        <input type="text" name="nim" placeholder="NIM (Wajib Angka/Huruf)" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="nim" placeholder="NIM" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
                         <input type="text" name="nama_mahasiswa" placeholder="Nama Lengkap" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
                         <input type="text" name="prodi" placeholder="Program Studi" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
                         <input type="text" name="kelas" placeholder="Kelas" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
@@ -417,6 +418,7 @@
             </div>
             {% endif %}
 
+            <!-- TAB KRS -->
             {% if active_tab == 'krs' %}
             <div class="space-y-6">
                 {% if role == 'admin' %}
