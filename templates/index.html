@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAKAD - Universitas Cendekia Abditama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .pdf-kop { display: none; }
+        @media print {
+            .pdf-kop { display: flex !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row">
+
+    <aside class="no-print w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-6">
+        <div class="space-y-6">
+            <div class="flex items-center gap-3 pb-6 border-b border-slate-800">
+                <img src="{{ url_for('static', filename='Logo UCA.png') }}" alt="Logo UCA" class="h-10 w-auto object-contain">
+                <div>
+                    <h1 class="font-bold text-base text-white tracking-wide">SIAKAD UCA</h1>
+                    <p class="text-[10px] text-slate-400">Universitas Cendekia Abditama</p>
+                </div>
+            </div>
+
+            <nav class="space-y-1">
+                <a href="{{ url_for('index', tab='dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {% if active_tab == 'dashboard' %}bg-indigo-600 text-white shadow-lg shadow-indigo-600/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    📊 Dashboard Utama
+                </a>
+                <a href="{{ url_for('index', tab='mahasiswa') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {% if active_tab == 'mahasiswa' %}bg-indigo-600 text-white shadow-lg shadow-indigo-600/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    🎓 Data Mahasiswa
+                </a>
+                <a href="{{ url_for('index', tab='dosen') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {% if active_tab == 'dosen' %}bg-indigo-600 text-white shadow-lg shadow-indigo-600/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    👨‍🏫 Data Dosen
+                </a>
+                <a href="{{ url_for('index', tab='matkul') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {% if active_tab == 'matkul' %}bg-indigo-600 text-white shadow-lg shadow-indigo-600/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    📚 Mata Kuliah
+                </a>
+                <a href="{{ url_for('index', tab='krs') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {% if active_tab == 'krs' %}bg-indigo-600 text-white shadow-lg shadow-indigo-600/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                    📝 Kartu Rencana Studi (KRS)
+                </a>
+            </nav>
+        </div>
+
+        <div class="pt-6 border-t border-slate-800 space-y-4">
+            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                <p class="text-xs text-slate-400">Login sebagai:</p>
+                <p class="text-sm font-semibold text-white truncate">{{ username }}</p>
+                <span class="inline-block mt-1 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase rounded">{{ role }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="flex items-center justify-center gap-2 w-full bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white py-2.5 rounded-xl text-sm font-medium transition border border-rose-600/20">
+                Keluar (Logout)
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-10 space-y-6 overflow-y-auto">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="no-print space-y-2">
+                    {% for category, message in messages %}
+                        <div class="flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-medium border {% if category == 'error' %}bg-rose-500/10 border-rose-500/30 text-rose-300{% else %}bg-emerald-500/10 border-emerald-500/30 text-emerald-300{% endif %}">
+                            <span>{{ '⚠️' if category == 'error' else '✅' }} {{ message }}</span>
+                            <button onclick="this.parentElement.remove()" class="text-sm font-bold opacity-70 hover:opacity-100">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div id="area-cetak" class="space-y-8">
+            
+            <div class="pdf-kop items-center gap-4 pb-6 border-b-2 border-slate-700">
+                <img src="{{ url_for('static', filename='Logo UCA.png') }}" alt="Logo UCA" class="h-14 w-auto object-contain">
+                <div class="text-left">
+                    <h2 class="text-lg font-extrabold text-white uppercase tracking-wider">UNIVERSITAS CENDEKIA ABDITAMA</h2>
+                    <p class="text-xs text-slate-300">Sistem Informasi Akademik Terpadu (SIAKAD UCA)</p>
+                    <p class="text-[10px] text-slate-400">Laporan Resmi Akademik • Dicetak pada sistem terintegrasi</p>
+                </div>
+            </div>
+
+            <header class="flex justify-between items-center bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
+                <div>
+                    <h2 class="text-xl font-bold capitalize text-white">
+                        {% if active_tab == 'dashboard' %}Dashboard Ringkasan Akademik{% endif %}
+                        {% if active_tab == 'mahasiswa' %}Manajemen Data Mahasiswa{% endif %}
+                        {% if active_tab == 'dosen' %}Manajemen Data Dosen{% endif %}
+                        {% if active_tab == 'matkul' %}Manajemen Mata Kuliah{% endif %}
+                        {% if active_tab == 'krs' %}Manajemen Kartu Rencana Studi (KRS){% endif %}
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Sistem Informasi Akademik Terpadu • Universitas Cendekia Abditama</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    {% if active_tab != 'dashboard' %}
+                    <a href="{{ url_for('export_csv', table_name=active_tab) }}" class="no-print bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                        📊 Unduh Excel (.csv)
+                    </a>
+                    {% endif %}
+                    <button onclick="unduhPDF()" class="no-print bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                        📥 Unduh PDF Otomatis
+                    </button>
+                </div>
+            </header>
+
+            {% if active_tab == 'dashboard' %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Mahasiswa</p>
+                    <p class="text-3xl font-extrabold text-indigo-400">{{ mahasiswa|length }}</p>
+                    <p class="text-[11px] text-slate-500">Terdaftar di sistem UCA</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Dosen</p>
+                    <p class="text-3xl font-extrabold text-emerald-400">{{ dosen|length }}</p>
+                    <p class="text-[11px] text-slate-500">Pengampu aktif</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mata Kuliah</p>
+                    <p class="text-3xl font-extrabold text-amber-400">{{ matkul|length }}</p>
+                    <p class="text-[11px] text-slate-500">Kurikulum aktif</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-2">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bobot SKS</p>
+                    <p class="text-3xl font-extrabold text-cyan-400">{{ total_sks }} SKS</p>
+                    <p class="text-[11px] text-slate-500">Akumulasi seluruh MK</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-8 rounded-2xl space-y-4">
+                    <h3 class="text-lg font-bold text-white">Selamat Datang di Portal Akademik UCA</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Sistem Informasi Akademik Terpadu Universitas Cendekia Abditama dirancang untuk memudahkan pengelolaan data akademik, transkrip nilai, Kartu Rencana Studi (KRS), serta laporan ringkas secara real-time.
+                    </p>
+                    <div class="pt-2 flex items-center gap-4">
+                        <a href="{{ url_for('index', tab='krs') }}" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-lg shadow-indigo-600/20">
+                            Lihat Data KRS
+                        </a>
+                        <a href="{{ url_for('index', tab='mahasiswa') }}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition">
+                            Kelola Mahasiswa
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Informasi Sesi</h3>
+                    <div class="space-y-3 text-xs text-slate-400">
+                        <div class="flex justify-between pb-2 border-b border-slate-800">
+                            <span>Status Akun:</span>
+                            <span class="font-semibold text-emerald-400">Aktif</span>
+                        </div>
+                        <div class="flex justify-between pb-2 border-b border-slate-800">
+                            <span>Hak Akses:</span>
+                            <span class="font-semibold text-indigo-400 uppercase">{{ role }}</span>
+                        </div>
+                        <div class="flex justify-between pb-2 border-b border-slate-800">
+                            <span>Database:</span>
+                            <span class="font-semibold text-slate-200">siakad_db (XAMPP)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if active_tab == 'mahasiswa' %}
+            <div class="space-y-6">
+                {% if role == 'admin' %}
+                <div class="no-print bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">+ Tambah Mahasiswa Baru</h3>
+                    <form action="{{ url_for('tambah_mahasiswa') }}" method="POST" onsubmit="return validasiFormMhs(this)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <input type="text" name="nim" placeholder="NIM (Wajib Angka/Huruf)" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="nama_mahasiswa" placeholder="Nama Lengkap" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="prodi" placeholder="Program Studi" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="kelas" placeholder="Kelas" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-semibold transition">Simpan</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="text-lg font-bold">Daftar Mahasiswa</h3>
+                        <form method="GET" action="{{ url_for('index') }}" class="no-print flex gap-2">
+                            <input type="hidden" name="tab" value="mahasiswa">
+                            <input type="text" name="search" value="{{ search }}" placeholder="Cari NIM / Nama..." class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                            <button type="submit" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-xl text-xs text-white">Cari</button>
+                            {% if search %}<a href="{{ url_for('index', tab='mahasiswa') }}" class="bg-rose-600/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs">Reset</a>{% endif %}
+                        </form>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">NIM</th>
+                                    <th class="p-3">Nama Mahasiswa</th>
+                                    <th class="p-3">Prodi</th>
+                                    <th class="p-3">Kelas</th>
+                                    {% if role == 'admin' %}<th class="p-3 text-center no-print">Aksi</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                {% for m in mahasiswa %}
+                                <tr>
+                                    <td class="p-3 font-medium">{{ m.nim }}</td>
+                                    <td class="p-3">{{ m.nama_mahasiswa }}</td>
+                                    <td class="p-3">{{ m.prodi }}</td>
+                                    <td class="p-3">{{ m.kelas }}</td>
+                                    {% if role == 'admin' %}
+                                    <td class="no-print p-3 text-center space-x-2">
+                                        <button onclick="bukaModal('modal-mhs-{{ m.nim }}')" class="text-amber-400 hover:underline text-xs">Edit</button>
+                                        <a href="{{ url_for('hapus_mahasiswa', nim=m.nim) }}" onclick="return confirm('Hapus mahasiswa ini?')" class="text-rose-400 hover:underline text-xs">Hapus</a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+
+                                {% if role == 'admin' %}
+                                <div id="modal-mhs-{{ m.nim }}" class="no-print hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+                                        <h3 class="text-lg font-bold">Edit Mahasiswa ({{ m.nim }})</h3>
+                                        <form action="{{ url_for('edit_mahasiswa', nim=m.nim) }}" method="POST" class="space-y-3">
+                                            <div>
+                                                <label class="text-xs text-slate-400">Nama Mahasiswa</label>
+                                                <input type="text" name="nama_mahasiswa" value="{{ m.nama_mahasiswa }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">Program Studi</label>
+                                                <input type="text" name="prodi" value="{{ m.prodi }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">Kelas</label>
+                                                <input type="text" name="kelas" value="{{ m.kelas }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div class="flex justify-end gap-2 pt-3">
+                                                <button type="button" onclick="tutupModal('modal-mhs-{{ m.nim }}')" class="px-4 py-2 bg-slate-800 rounded-xl text-xs text-white">Batal</button>
+                                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if active_tab == 'dosen' %}
+            <div class="space-y-6">
+                {% if role == 'admin' %}
+                <div class="no-print bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">+ Tambah Dosen Baru</h3>
+                    <form action="{{ url_for('tambah_dosen') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <input type="text" name="nidn" placeholder="NIDN" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="nama_dosen" placeholder="Nama & Gelar" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="keahlian" placeholder="Bidang Keahlian" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-semibold transition">Simpan</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="text-lg font-bold">Daftar Dosen Pengampu</h3>
+                        <form method="GET" action="{{ url_for('index') }}" class="no-print flex gap-2">
+                            <input type="hidden" name="tab" value="dosen">
+                            <input type="text" name="search" value="{{ search }}" placeholder="Cari NIDN / Nama..." class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                            <button type="submit" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-xl text-xs text-white">Cari</button>
+                            {% if search %}<a href="{{ url_for('index', tab='dosen') }}" class="bg-rose-600/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs">Reset</a>{% endif %}
+                        </form>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">NIDN</th>
+                                    <th class="p-3">Nama Dosen</th>
+                                    <th class="p-3">Keahlian</th>
+                                    {% if role == 'admin' %}<th class="p-3 text-center no-print">Aksi</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                {% for d in dosen %}
+                                <tr>
+                                    <td class="p-3 font-medium">{{ d.nidn }}</td>
+                                    <td class="p-3">{{ d.nama_dosen }}</td>
+                                    <td class="p-3">{{ d.keahlian }}</td>
+                                    {% if role == 'admin' %}
+                                    <td class="no-print p-3 text-center space-x-2">
+                                        <button onclick="bukaModal('modal-dosen-{{ d.nidn }}')" class="text-amber-400 hover:underline text-xs">Edit</button>
+                                        <a href="{{ url_for('hapus_dosen', nidn=d.nidn) }}" onclick="return confirm('Hapus dosen ini?')" class="text-rose-400 hover:underline text-xs">Hapus</a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+
+                                {% if role == 'admin' %}
+                                <div id="modal-dosen-{{ d.nidn }}" class="no-print hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+                                        <h3 class="text-lg font-bold">Edit Dosen ({{ d.nidn }})</h3>
+                                        <form action="{{ url_for('edit_dosen', nidn=d.nidn) }}" method="POST" class="space-y-3">
+                                            <div>
+                                                <label class="text-xs text-slate-400">Nama Dosen</label>
+                                                <input type="text" name="nama_dosen" value="{{ d.nama_dosen }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">Keahlian</label>
+                                                <input type="text" name="keahlian" value="{{ d.keahlian }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div class="flex justify-end gap-2 pt-3">
+                                                <button type="button" onclick="tutupModal('modal-dosen-{{ d.nidn }}')" class="px-4 py-2 bg-slate-800 rounded-xl text-xs text-white">Batal</button>
+                                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if active_tab == 'matkul' %}
+            <div class="space-y-6">
+                {% if role == 'admin' %}
+                <div class="no-print bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">+ Tambah Mata Kuliah</h3>
+                    <form action="{{ url_for('tambah_matkul') }}" method="POST" onsubmit="return validasiFormMatkul(this)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <input type="text" name="kode_mk" placeholder="Kode MK" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="text" name="nama_mk" placeholder="Nama Mata Kuliah" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <input type="number" name="sks" placeholder="SKS (1-6)" min="1" max="6" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <select name="nidn_dosen" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300">
+                            <option value="">-- Pilih Dosen --</option>
+                            {% for d in dosen %}<option value="{{ d.nidn }}">{{ d.nama_dosen }}</option>{% endfor %}
+                        </select>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-semibold transition">Simpan</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="text-lg font-bold">Daftar Mata Kuliah</h3>
+                        <form method="GET" action="{{ url_for('index') }}" class="no-print flex gap-2">
+                            <input type="hidden" name="tab" value="matkul">
+                            <input type="text" name="search" value="{{ search }}" placeholder="Cari Kode / Nama..." class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                            <button type="submit" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-xl text-xs text-white">Cari</button>
+                            {% if search %}<a href="{{ url_for('index', tab='matkul') }}" class="bg-rose-600/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs">Reset</a>{% endif %}
+                        </form>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">Kode MK</th>
+                                    <th class="p-3">Nama Mata Kuliah</th>
+                                    <th class="p-3">SKS</th>
+                                    {% if role == 'admin' %}<th class="p-3 text-center no-print">Aksi</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                {% for mk in matkul %}
+                                <tr>
+                                    <td class="p-3 font-medium">{{ mk.kode_mk }}</td>
+                                    <td class="p-3">{{ mk.nama_mk }}</td>
+                                    <td class="p-3">{{ mk.sks }}</td>
+                                    {% if role == 'admin' %}
+                                    <td class="no-print p-3 text-center space-x-2">
+                                        <button onclick="bukaModal('modal-mk-{{ mk.kode_mk }}')" class="text-amber-400 hover:underline text-xs">Edit</button>
+                                        <a href="{{ url_for('hapus_matkul', kode_mk=mk.kode_mk) }}" onclick="return confirm('Hapus matkul ini?')" class="text-rose-400 hover:underline text-xs">Hapus</a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+
+                                {% if role == 'admin' %}
+                                <div id="modal-mk-{{ mk.kode_mk }}" class="no-print hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+                                        <h3 class="text-lg font-bold">Edit Mata Kuliah ({{ mk.kode_mk }})</h3>
+                                        <form action="{{ url_for('edit_matkul', kode_mk=mk.kode_mk) }}" method="POST" class="space-y-3">
+                                            <div>
+                                                <label class="text-xs text-slate-400">Nama Mata Kuliah</label>
+                                                <input type="text" name="nama_mk" value="{{ mk.nama_mk }}" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">SKS</label>
+                                                <input type="number" name="sks" value="{{ mk.sks }}" min="1" max="6" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">Dosen Pengampu</label>
+                                                <select name="nidn_dosen" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-slate-200">
+                                                    {% for d in dosen %}
+                                                    <option value="{{ d.nidn }}" {% if d.nidn == mk.nidn_dosen %}selected{% endif %}>{{ d.nama_dosen }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="flex justify-end gap-2 pt-3">
+                                                <button type="button" onclick="tutupModal('modal-mk-{{ mk.kode_mk }}')" class="px-4 py-2 bg-slate-800 rounded-xl text-xs text-white">Batal</button>
+                                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if active_tab == 'krs' %}
+            <div class="space-y-6">
+                {% if role == 'admin' %}
+                <div class="no-print bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">+ Input KRS & Nilai</h3>
+                    <form action="{{ url_for('tambah_krs') }}" method="POST" onsubmit="return validasiFormKRS(this)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <select name="nim_mhs" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300">
+                            <option value="">-- Pilih Mahasiswa --</option>
+                            {% for m in mahasiswa %}<option value="{{ m.nim }}">{{ m.nama_mahasiswa }}</option>{% endfor %}
+                        </select>
+                        <select name="kode_mk" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300">
+                            <option value="">-- Pilih Mata Kuliah --</option>
+                            {% for mk in matkul %}<option value="{{ mk.kode_mk }}">{{ mk.nama_mk }}</option>{% endfor %}
+                        </select>
+                        <input type="number" name="semester" placeholder="Semester (1-8)" min="1" max="8" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                        <select name="nilai_huruf" required class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300">
+                            <option value="-">-- Nilai --</option>
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
+                        </select>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-semibold transition">Simpan</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="text-lg font-bold">Kartu Rencana Studi (KRS) & Transkrip Nilai</h3>
+                        <form method="GET" action="{{ url_for('index') }}" class="no-print flex gap-2">
+                            <input type="hidden" name="tab" value="krs">
+                            <input type="text" name="search" value="{{ search }}" placeholder="Cari Mahasiswa / Matkul..." class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                            <button type="submit" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-xl text-xs text-white">Cari</button>
+                            {% if search %}<a href="{{ url_for('index', tab='krs') }}" class="bg-rose-600/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs">Reset</a>{% endif %}
+                        </form>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">Mahasiswa</th>
+                                    <th class="p-3">Mata Kuliah</th>
+                                    <th class="p-3">Semester</th>
+                                    <th class="p-3">Nilai</th>
+                                    {% if role == 'admin' %}<th class="p-3 text-center no-print">Aksi</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                {% for k in krs %}
+                                <tr>
+                                    <td class="p-3 font-medium">{{ k.nama_mahasiswa }}</td>
+                                    <td class="p-3">{{ k.nama_mk }}</td>
+                                    <td class="p-3">{{ k.semester }}</td>
+                                    <td class="p-3 font-bold text-indigo-400">{{ k.nilai_huruf }}</td>
+                                    {% if role == 'admin' %}
+                                    <td class="no-print p-3 text-center space-x-2">
+                                        <button onclick="bukaModal('modal-krs-{{ k.id_krs }}')" class="text-amber-400 hover:underline text-xs">Edit</button>
+                                        <a href="{{ url_for('hapus_krs', id_krs=k.id_krs) }}" onclick="return confirm('Hapus KRS ini?')" class="text-rose-400 hover:underline text-xs">Hapus</a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+
+                                {% if role == 'admin' %}
+                                <div id="modal-krs-{{ k.id_krs }}" class="no-print hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+                                        <h3 class="text-lg font-bold">Edit KRS: {{ k.nama_mahasiswa }}</h3>
+                                        <form action="{{ url_for('edit_krs', id_krs=k.id_krs) }}" method="POST" class="space-y-3">
+                                            <div>
+                                                <label class="text-xs text-slate-400">Semester</label>
+                                                <input type="number" name="semester" value="{{ k.semester }}" min="1" max="8" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-white">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-slate-400">Nilai Huruf</label>
+                                                <select name="nilai_huruf" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm mt-1 text-slate-200">
+                                                    {% for nilai in ['-', 'A', 'B', 'C', 'D', 'E'] %}
+                                                    <option value="{{ nilai }}" {% if nilai == k.nilai_huruf %}selected{% endif %}>{{ nilai }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="flex justify-end gap-2 pt-3">
+                                                <button type="button" onclick="tutupModal('modal-krs-{{ k.id_krs }}')" class="px-4 py-2 bg-slate-800 rounded-xl text-xs text-white">Batal</button>
+                                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold text-white">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <script>
+        function bukaModal(id) { 
+            document.getElementById(id).classList.remove('hidden'); 
+        }
+        function tutupModal(id) { 
+            document.getElementById(id).classList.add('hidden'); 
+        }
+
+        function validasiFormMhs(form) {
+            const nim = form.nim.value.trim();
+            if (nim.length < 3) {
+                alert('NIM terlalu pendek! Harap masukkan NIM yang valid.');
+                return false;
+            }
+            return true;
+        }
+
+        function validasiFormMatkul(form) {
+            const sks = parseInt(form.sks.value);
+            if (sks < 1 || sks > 6) {
+                alert('Bobot SKS harus di antara 1 sampai 6!');
+                return false;
+            }
+            return true;
+        }
+
+        function validasiFormKRS(form) {
+            const semester = parseInt(form.semester.value);
+            if (semester < 1 || semester > 8) {
+                alert('Semester perkuliahan harus di antara 1 sampai 8!');
+                return false;
+            }
+            return true;
+        }
+
+        function unduhPDF() {
+            const element = document.getElementById('area-cetak');
+            const options = {
+                margin:       10,
+                filename:     'Laporan-Resmi-SIAKAD-UCA.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(options).save();
+        }
+    </script>
+</body>
+</html>
